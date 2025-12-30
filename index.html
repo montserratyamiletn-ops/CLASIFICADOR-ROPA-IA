@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Scanner de Ropa IA</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #222; color: white; }
         video { border: 5px solid #444; border-radius: 10px; width: 100%; max-width: 400px; transform: scaleX(-1); }
@@ -24,12 +24,20 @@
 
         async function cargarModelo() {
             try {
-                // Carga el modelo y espera a que esté listo
+                // Cargamos el modelo
                 modelo = await tf.loadLayersModel('model.json');
+                
+                // --- ESTE ES EL PARCHE PARA EL ERROR DE INPUTLAYER ---
+                if (modelo.layers[0].batchInputShape === undefined) {
+                    modelo.layers[0].batchInputShape = [null, 28, 28, 1];
+                }
+                // -------------------------------------------------------
+
                 document.getElementById("resultado").innerText = "¡IA Lista! Enfoca ropa";
                 predecir();
             } catch (err) {
-                document.getElementById("resultado").innerText = "Error al cargar el cerebro: " + err.message;
+                document.getElementById("resultado").innerText = "Error: " + err.message;
+                console.error(err);
             }
         }
 
@@ -37,9 +45,8 @@
             if (modelo != null) {
                 const ctx = canvas.getContext("2d", {willReadFrequently: true});
                 ctx.drawImage(video, 0, 0, 28, 28);
-                
                 const imgData = ctx.getImageData(0, 0, 28, 28);
-                // Convertimos la imagen a tensores que la IA entiende
+
                 let tensor = tf.browser.fromPixels(imgData, 1)
                     .reshape([1, 28, 28, 1])
                     .cast('float32')
@@ -47,21 +54,14 @@
 
                 const prediccion = modelo.predict(tensor).dataSync();
                 const indiceMax = prediccion.indexOf(Math.max(...prediccion));
-                
                 document.getElementById("resultado").innerText = clases[indiceMax];
             }
             requestAnimationFrame(predecir);
         }
 
-        // Acceder a la cámara trasera en celulares
         navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}})
-            .then(stream => { 
-                video.srcObject = stream; 
-                cargarModelo(); 
-            })
-            .catch(err => {
-                document.getElementById("resultado").innerText = "Activa el permiso de cámara";
-            });
+            .then(stream => { video.srcObject = stream; cargarModelo(); })
+            .catch(err => { document.getElementById("resultado").innerText = "Error cámara"; });
     </script>
 </body>
 </html>
