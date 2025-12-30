@@ -24,10 +24,10 @@
 
         async function cargarModelo() {
     try {
-        // El secreto es agregar {strict: false} aquí
+        // Este es el parche que falta en tu foto:
         modelo = await tf.loadLayersModel('model.json', {strict: false});
         
-        // Y agregar esta línea para que la IA sepa el tamaño de la imagen
+        // Esto le dice a la IA que use el tamaño 28x28
         modelo.layers[0].batchInputShape = [null, 28, 28, 1];
         
         document.getElementById("resultado").innerText = "¡IA Lista! Enfoca ropa";
@@ -60,4 +60,5 @@
     </script>
 </body>
 </html>
+
 
