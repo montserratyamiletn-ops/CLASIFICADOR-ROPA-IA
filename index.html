@@ -19,39 +19,44 @@
         let modelo = null;
         const clases = ['Camiseta', 'Pantalón', 'Suéter', 'Vestido', 'Abrigo', 'Sandalia', 'Camisa', 'Zapatilla', 'Bolso', 'Botín'];
 
-        async function cargarIA() {
+        async function cargarModelo() {
             try {
-                // CARGA CON PARCHE: Aquí está el truco
+                // Parche para el error de InputLayer
                 modelo = await tf.loadLayersModel('model.json', {strict: false});
                 if (modelo.layers[0]) {
                     modelo.layers[0].batchInputShape = [null, 28, 28, 1];
                 }
                 document.getElementById("resultado").innerText = "¡IA Lista! Enfoca ropa";
-                predecir();
+                iniciarPrediccion();
             } catch (e) {
                 document.getElementById("resultado").innerText = "Error: " + e.message;
             }
         }
 
-        async function predecir() {
+        async function iniciarPrediccion() {
             const canvas = document.getElementById("canvas");
             const video = document.getElementById("video");
             const ctx = canvas.getContext("2d", {willReadFrequently: true});
 
-            ctx.drawImage(video, 0, 0, 28, 28);
-            const imgData = ctx.getImageData(0, 0, 28, 28);
-            let tensor = tf.browser.fromPixels(imgData, 1).reshape([1, 28, 28, 1]).cast('float32').div(tf.scalar(255));
+            async function predecir() {
+                ctx.drawImage(video, 0, 0, 28, 28);
+                const imgData = ctx.getImageData(0, 0, 28, 28);
+                let tensor = tf.browser.fromPixels(imgData, 1).reshape([1, 28, 28, 1]).cast('float32').div(tf.scalar(255));
 
-            const prediccion = modelo.predict(tensor).dataSync();
-            const mayor = Math.max(...prediccion);
-            const indice = prediccion.indexOf(mayor);
-            
-            document.getElementById("resultado").innerText = clases[indice];
-            requestAnimationFrame(predecir);
+                const prediccion = modelo.predict(tensor).dataSync();
+                const indice = prediccion.indexOf(Math.max(...prediccion));
+                
+                document.getElementById("resultado").innerText = clases[indice];
+                requestAnimationFrame(predecir);
+            }
+            predecir();
         }
 
         navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}})
-            .then(s => { document.getElementById("video").srcObject = s; cargarIA(); });
+            .then(s => { 
+                document.getElementById("video").srcObject = s; 
+                cargarModelo(); 
+            });
     </script>
 </body>
 </html>
