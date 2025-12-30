@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Scanner de Ropa IA</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #222; color: white; }
         video { border: 5px solid #444; border-radius: 10px; width: 100%; max-width: 400px; transform: scaleX(-1); }
@@ -11,7 +11,7 @@
     </style>
 </head>
 <body>
-    <h1>Clasificador en Tiempo Real</h1>
+    <h1>Scanner de Ropa IA</h1>
     <video id="video" playsinline autoplay></video>
     <canvas id="canvas" width="28" height="28" style="display:none;"></canvas>
     <div id="resultado">Cargando IA...</div>
@@ -23,19 +23,23 @@
         const clases = ['Camiseta', 'Pantalón', 'Suéter', 'Vestido', 'Abrigo', 'Sandalia', 'Camisa', 'Zapatilla', 'Bolso', 'Botín'];
 
         async function cargarModelo() {
-            // Carga el modelo desde la misma carpeta
-            modelo = await tf.loadLayersModel('model.json');
-            document.getElementById("resultado").innerText = "¡IA Lista! Enfoca algo...";
-            predecir();
+            try {
+                // Carga el modelo y espera a que esté listo
+                modelo = await tf.loadLayersModel('model.json');
+                document.getElementById("resultado").innerText = "¡IA Lista! Enfoca ropa";
+                predecir();
+            } catch (err) {
+                document.getElementById("resultado").innerText = "Error al cargar el cerebro: " + err.message;
+            }
         }
 
         async function predecir() {
             if (modelo != null) {
                 const ctx = canvas.getContext("2d", {willReadFrequently: true});
-                // Dibujar el video en el mini-canvas
                 ctx.drawImage(video, 0, 0, 28, 28);
                 
                 const imgData = ctx.getImageData(0, 0, 28, 28);
+                // Convertimos la imagen a tensores que la IA entiende
                 let tensor = tf.browser.fromPixels(imgData, 1)
                     .reshape([1, 28, 28, 1])
                     .cast('float32')
@@ -46,12 +50,18 @@
                 
                 document.getElementById("resultado").innerText = clases[indiceMax];
             }
-            requestAnimationFrame(predecir); // Bucle infinito suave
+            requestAnimationFrame(predecir);
         }
 
+        // Acceder a la cámara trasera en celulares
         navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}})
-            .then(stream => { video.srcObject = stream; cargarModelo(); })
-            .catch(err => alert("No se pudo acceder a la cámara"));
+            .then(stream => { 
+                video.srcObject = stream; 
+                cargarModelo(); 
+            })
+            .catch(err => {
+                document.getElementById("resultado").innerText = "Activa el permiso de cámara";
+            });
     </script>
 </body>
 </html>
