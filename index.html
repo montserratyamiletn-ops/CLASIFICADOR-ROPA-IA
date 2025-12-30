@@ -24,20 +24,20 @@
 
         async function cargarModelo() {
             try {
-                // Cargamos el modelo
-                modelo = await tf.loadLayersModel('model.json');
+                // CARGA ESPECIAL: Esto arregla el error de "InputLayer"
+                modelo = await tf.loadLayersModel('model.json', {
+                    strict: false // Esto permite que el modelo cargue aunque falte la forma de entrada
+                });
                 
-                // --- ESTE ES EL PARCHE PARA EL ERROR DE INPUTLAYER ---
-                if (modelo.layers[0].batchInputShape === undefined) {
+                // Parche manual para asegurar que reconozca el tamaño 28x28
+                if (modelo.layers[0]) {
                     modelo.layers[0].batchInputShape = [null, 28, 28, 1];
                 }
-                // -------------------------------------------------------
 
-                document.getElementById("resultado").innerText = "¡IA Lista! Enfoca ropa";
+                document.getElementById("resultado").innerText = "¡IA Lista! Enfoca algo...";
                 predecir();
             } catch (err) {
                 document.getElementById("resultado").innerText = "Error: " + err.message;
-                console.error(err);
             }
         }
 
