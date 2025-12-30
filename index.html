@@ -23,23 +23,19 @@
         const clases = ['Camiseta', 'Pantalón', 'Suéter', 'Vestido', 'Abrigo', 'Sandalia', 'Camisa', 'Zapatilla', 'Bolso', 'Botín'];
 
         async function cargarModelo() {
-            try {
-                // Forzamos la carga ignorando el error de capas de entrada
-                modelo = await tf.loadLayersModel('model.json', {strict: false});
-                
-                // Si el modelo cargó, le inyectamos la forma de entrada manualmente
-                if (modelo) {
-                    modelo.layers[0].batchInputShape = [null, 28, 28, 1];
-                    console.log("Modelo cargado con parche de compatibilidad");
-                }
-
-                document.getElementById("resultado").innerText = "¡IA Lista! Enfoca tu ropa";
-                predecir();
-            } catch (err) {
-                document.getElementById("resultado").innerText = "Error: " + err.message;
-            }
-        }
-
+    try {
+        // El secreto es agregar {strict: false} aquí
+        modelo = await tf.loadLayersModel('model.json', {strict: false});
+        
+        // Y agregar esta línea para que la IA sepa el tamaño de la imagen
+        modelo.layers[0].batchInputShape = [null, 28, 28, 1];
+        
+        document.getElementById("resultado").innerText = "¡IA Lista! Enfoca ropa";
+        predecir();
+    } catch (err) {
+        document.getElementById("resultado").innerText = "Error: " + err.message;
+    }
+}
         async function predecir() {
             if (modelo != null) {
                 const ctx = canvas.getContext("2d", {willReadFrequently: true});
@@ -64,3 +60,4 @@
     </script>
 </body>
 </html>
+
